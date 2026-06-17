@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin - Apuestas</title>
+    <link rel="stylesheet" href="/apuesta.css">
+    <script type="module" src="/CommandDispatcher.js"></script>
+</head>
+<body class="login-page admin-login">
+    <script src="/utilesVista.js"></script>
+
+    <div class="login-container">
+        <h2>Iniciar sesion administrador</h2>
+        <form id="formLogin" action="/login-admin/login" method="post" onsubmit="acceder(event);">
+            <div class="form-group login-field">
+                <label for="usuario">Usuario:</label>
+                <input type="text" id="usuario" name="usuario" required>
+            </div>
+            <div class="form-group login-field">
+                <label for="contrasenia">Contrasena:</label>
+                <input type="password" id="contrasenia" name="contrasenia" required>
+            </div>
+            <button type="submit" class="btn-acceder">Acceder</button>
+            <button type="button" class="btn-secundario" onclick="liberarSesionesAdmin()">Liberar sesiones admin</button>
+        </form>
+
+        <a class="login-link" href="/login.html">Ingresar como jugador</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const vistaLogin = CommandDispatcher.registerView('LoginAdmin', {
+                onException: async (msg) => await mostrarMensaje(msg)
+            });
+
+            vistaLogin.handler('error', async (mensaje) => await mostrarMensaje(mensaje));
+            vistaLogin.handler('mensaje', async (mensaje) => await mostrarMensaje(mensaje));
+            vistaLogin.handler('loginExitoso', (urlDestino) => window.location.href = '/' + urlDestino);
+
+            CommandDispatcher.startView(vistaLogin);
+        });
+
+        function acceder(event) {
+            event.preventDefault();
+            CommandDispatcher.submit('/login-admin/login', serializarFormulario('formLogin'));
+        }
+
+        function liberarSesionesAdmin() {
+            CommandDispatcher.submit('/login-admin/liberar-sesiones', {});
+        }
+    </script>
+</body>
+</html>

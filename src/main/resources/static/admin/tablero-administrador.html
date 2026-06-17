@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero administrador</title>
+    <link rel="stylesheet" href="/apuesta.css">
+    <script type="module" src="/CommandDispatcher.js"></script>
+</head>
+<body>
+    <script src="/utilesVista.js"></script>
+
+    <div class="container">
+        <h2>Tablero de control del administrador</h2>
+
+        <div class="form-group">
+            <label for="fechaJornadaInput">Jornada</label>
+            <input id="fechaJornadaInput" type="date">
+            <button id="btnJornadaAnterior" type="button">Anterior</button>
+            <button id="btnJornadaSiguiente" type="button">Siguiente</button>
+            <button id="btnBuscarJornada" type="button">Buscar</button>
+            <button id="btnActualizar" type="button">Actualizar</button>
+            <button id="btnSalir" type="button">Salir</button>
+        </div>
+
+        <h3 id="fechaJornada"></h3>
+
+        <section class="resumen-tablero">
+            <div>
+                <span>Total apostado</span>
+                <strong id="totalApostado">$0</strong>
+            </div>
+            <div>
+                <span>Total pagado</span>
+                <strong id="totalPagado">$0</strong>
+            </div>
+            <div>
+                <span>Comisiones</span>
+                <strong id="comisiones">$0</strong>
+            </div>
+            <div>
+                <span>Balance general</span>
+                <strong id="balanceGeneral">$0</strong>
+            </div>
+            <div>
+                <span>Carreras totales</span>
+                <strong id="carrerasTotales">0</strong>
+            </div>
+            <div>
+                <span>Finalizadas</span>
+                <strong id="carrerasFinalizadas">0</strong>
+            </div>
+            <div>
+                <span>Faltan correr</span>
+                <strong id="carrerasFaltanCorrer">0</strong>
+            </div>
+        </section>
+
+        <h3>Carreras finalizadas</h3>
+        <div id="tablaCarrerasFinalizadas"></div>
+
+        <h3>Proximas carreras</h3>
+        <div id="tablaProximasCarreras"></div>
+
+        <section id="panelGestionCarrera" class="gestion-panel" hidden>
+            <h3>Gestionar carrera</h3>
+            <div class="resumen-tablero">
+                <div>
+                    <span>Nro.</span>
+                    <strong id="gestionNumero">-</strong>
+                </div>
+                <div>
+                    <span>Nombre</span>
+                    <strong id="gestionNombre">-</strong>
+                </div>
+                <div>
+                    <span>Estado</span>
+                    <strong id="gestionEstado">-</strong>
+                </div>
+                <div>
+                    <span>Total apostado</span>
+                    <strong id="gestionTotalApostado">$0</strong>
+                </div>
+            </div>
+
+            <div id="tablaCaballosGestion"></div>
+
+            <div class="form-group">
+                <label for="caballoGanador">Caballo ganador</label>
+                <select id="caballoGanador">
+                    <option value="">Seleccionar</option>
+                </select>
+                <button type="button" onclick="abrirCarreraGestionada()">Abrir</button>
+                <button type="button" onclick="cerrarCarreraGestionada()">Cerrar</button>
+                <button type="button" onclick="finalizarCarreraGestionada()">Finalizar</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let carreraEnGestion = null;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const fechaJornada = document.getElementById('fechaJornada');
+            const fechaJornadaInput = document.getElementById('fechaJornadaInput');
+            const totalApostado = document.getElementById('totalApostado');
+            const totalPagado = document.getElementById('totalPagado');
+            const comisiones = document.getElementById('comisiones');
+            const balanceGeneral = document.getElementById('balanceGeneral');
+            const carrerasTotales = document.getElementById('carrerasTotales');
+            const carrerasFinalizadas = document.getElementById('carrerasFinalizadas');
+            const carrerasFaltanCorrer = document.getElementById('carrerasFaltanCorrer');
+            const tablaCarrerasFinalizadas = document.getElementById('tablaCarrerasFinalizadas');
+            const tablaProximasCarreras = document.getElementById('tablaProximasCarreras');
+            const btnBuscarJornada = document.getElementById('btnBuscarJornada');
+            const btnActualizar = document.getElementById('btnActualizar');
+            const btnJornadaAnterior = document.getElementById('btnJornadaAnterior');
+            const btnJornadaSiguiente = document.getElementById('btnJornadaSiguiente');
+            const btnSalir = document.getElementById('btnSalir');
+            const panelGestionCarrera = document.getElementById('panelGestionCarrera');
+
+            const vistaTablero = CommandDispatcher.registerView('TableroAdministrador', {
+                onException: async (msg) => await mostrarMensaje(msg),
+                onError: async (status, text) => await mostrarMensaje('Error ' + status + ': ' + text)
+            });
+
+            vistaTablero.handler('mostrarTableroAdministrador', (tablero) => {
+                fechaJornada.innerText = 'Jornada: ' + tablero.fechaJornada;
+                fechaJornadaInput.value = tablero.fechaJornada;
+                totalApostado.innerText = formatearMonto(tablero.totalApostado);
+                totalPagado.innerText = formatearMonto(tablero.totalPagado);
+                comisiones.innerText = formatearMonto(tablero.comisiones);
+                balanceGeneral.innerText = formatearMonto(tablero.balanceGeneral);
+                carrerasTotales.innerText = tablero.carrerasTotales;
+                carrerasFinalizadas.innerText = tablero.carrerasFinalizadas;
+                carrerasFaltanCorrer.innerText = tablero.carrerasFaltanCorrer;
+                tablaCarrerasFinalizadas.innerHTML = crearTablaCarrerasFinalizadas(tablero.carrerasFinalizadasDetalle);
+                tablaProximasCarreras.innerHTML = crearTablaProximasCarreras(tablero.proximasCarreras);
+            });
+
+            vistaTablero.handler('gestionarCarrera', (carrera) => {
+                carreraEnGestion = carrera;
+                panelGestionCarrera.hidden = false;
+                mostrarCarreraGestionada(carrera);
+            });
+
+            vistaTablero.handler('usuarioNoAutenticado', (urlDestino) => {
+                window.location.href = '/' + urlDestino;
+            });
+
+            vistaTablero.handler('mensaje', async (mensaje) => await mostrarMensaje(mensaje));
+            vistaTablero.handler('loginExitoso', (urlDestino) => window.location.href = '/' + urlDestino);
+
+            CommandDispatcher.startView(vistaTablero);
+
+            const cargarTablero = () => {
+                CommandDispatcher.submit('/admin/apuestas/tablero', {}, 'GET');
+            };
+
+            const cargarTableroPorFecha = () => {
+                const fecha = fechaJornadaInput.value;
+                if (!fecha) {
+                    mostrarMensaje('Debe seleccionar una fecha');
+                    return;
+                }
+                CommandDispatcher.submit('/admin/apuestas/tablero/jornada', { fecha }, 'GET');
+            };
+
+            btnActualizar.addEventListener('click', cargarTablero);
+            btnBuscarJornada.addEventListener('click', cargarTableroPorFecha);
+            btnJornadaAnterior.addEventListener('click', () => cambiarJornada('anterior'));
+            btnJornadaSiguiente.addEventListener('click', () => cambiarJornada('siguiente'));
+            btnSalir.addEventListener('click', () => CommandDispatcher.submit('/login-admin/logout', {}));
+
+            cargarTablero();
+        });
+
+        function crearTablaCarrerasFinalizadas(carreras) {
+            if (!Array.isArray(carreras) || carreras.length === 0) {
+                return '<p>No hay carreras finalizadas.</p>';
+            }
+
+            let html = '<table><thead><tr>';
+            html += '<th>Nro.</th>';
+            html += '<th>Hora fin</th>';
+            html += '<th>Caballos</th>';
+            html += '<th>Total apostado</th>';
+            html += '<th>Total pagado</th>';
+            html += '<th>Caballo ganador</th>';
+            html += '<th>Dividendo final</th>';
+            html += '</tr></thead><tbody>';
+
+            carreras.forEach(carrera => {
+                html += '<tr>';
+                html += '<td>' + carrera.numero + '</td>';
+                html += '<td>' + (carrera.horaFin || '') + '</td>';
+                html += '<td>' + carrera.cantidadCaballos + '</td>';
+                html += '<td>' + formatearMonto(carrera.totalApostado) + '</td>';
+                html += '<td>' + formatearMonto(carrera.totalPagado) + '</td>';
+                html += '<td>' + (carrera.caballoGanador || '') + '</td>';
+                html += '<td>' + Number(carrera.dividendoFinal || 0).toFixed(2) + '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function mostrarCarreraGestionada(carrera) {
+            document.getElementById('gestionNumero').textContent = carrera.numero;
+            document.getElementById('gestionNombre').textContent = carrera.nombre;
+            document.getElementById('gestionEstado').textContent = carrera.estado;
+            document.getElementById('gestionTotalApostado').textContent = formatearMonto(carrera.totalApostado);
+            document.getElementById('tablaCaballosGestion').innerHTML = crearTablaCaballosGestion(carrera.caballos || []);
+            document.getElementById('caballoGanador').innerHTML = crearOpcionesCaballos(carrera.caballos || []);
+        }
+
+        function crearTablaCaballosGestion(caballos) {
+            if (!Array.isArray(caballos) || caballos.length === 0) {
+                return '<p>No hay caballos participantes.</p>';
+            }
+
+            let html = '<table><thead><tr>';
+            html += '<th>Nro.</th>';
+            html += '<th>Caballo</th>';
+            html += '<th>Dividendo</th>';
+            html += '<th>Total apostado</th>';
+            html += '<th>Apuestas</th>';
+            html += '</tr></thead><tbody>';
+
+            caballos.forEach(caballo => {
+                html += '<tr>';
+                html += '<td>' + caballo.numero + '</td>';
+                html += '<td>' + escapar(caballo.nombre) + '</td>';
+                html += '<td>' + formatearDividendo(caballo.dividendoActual) + '</td>';
+                html += '<td>' + formatearMonto(caballo.totalApostado) + '</td>';
+                html += '<td>' + caballo.cantidadApuestas + '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function crearOpcionesCaballos(caballos) {
+            let html = '<option value="">Seleccionar</option>';
+
+            caballos.forEach(caballo => {
+                html += '<option value="' + caballo.numero + '">' + caballo.numero + ' - ' + escapar(caballo.nombre) + '</option>';
+            });
+
+            return html;
+        }
+
+        function crearTablaProximasCarreras(carreras) {
+            if (!Array.isArray(carreras) || carreras.length === 0) {
+                return '<p>No hay proximas carreras.</p>';
+            }
+
+            let html = '<table><thead><tr>';
+            html += '<th>Nro.</th>';
+            html += '<th>Estado</th>';
+            html += '<th>Caballos</th>';
+            html += '<th>Total apostado</th>';
+            html += '<th>Apuestas</th>';
+            html += '<th>Accion</th>';
+            html += '</tr></thead><tbody>';
+
+            carreras.forEach(carrera => {
+                html += '<tr>';
+                html += '<td>' + carrera.numero + '</td>';
+                html += '<td>' + carrera.estado + '</td>';
+                html += '<td>' + carrera.cantidadCaballos + '</td>';
+                html += '<td>' + formatearMonto(carrera.totalApostado) + '</td>';
+                html += '<td>' + carrera.cantidadApuestas + '</td>';
+                html += '<td><button type="button" onclick="gestionarCarrera(' + carrera.numero + ')">Gestionar</button></td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function gestionarCarrera(numero) {
+            CommandDispatcher.submit('/admin/apuestas/carreras/' + numero + '/gestionar', {
+                fecha: obtenerFechaJornada()
+            }, 'POST');
+        }
+
+        function abrirCarreraGestionada() {
+            ejecutarAccionCarrera('abrir', {});
+        }
+
+        function cerrarCarreraGestionada() {
+            ejecutarAccionCarrera('cerrar', {});
+        }
+
+        function finalizarCarreraGestionada() {
+            const caballoGanador = document.getElementById('caballoGanador').value;
+            const datos = {};
+
+            if (caballoGanador) {
+                datos.caballoGanador = caballoGanador;
+            }
+
+            ejecutarAccionCarrera('finalizar', datos);
+        }
+
+        function ejecutarAccionCarrera(accion, datos) {
+            if (!carreraEnGestion) {
+                mostrarMensaje('No hay carrera seleccionada');
+                return;
+            }
+
+            datos.fecha = carreraEnGestion.fecha || obtenerFechaJornada();
+            CommandDispatcher.submit('/admin/apuestas/carreras/' + carreraEnGestion.numero + '/' + accion, datos, 'POST');
+        }
+
+        function cambiarJornada(sentido) {
+            const fechaActual = obtenerFechaJornada();
+            if (!fechaActual) {
+                mostrarMensaje('Debe seleccionar una fecha');
+                return;
+            }
+
+            CommandDispatcher.submit('/admin/apuestas/tablero/jornada/' + sentido, { fecha: fechaActual }, 'GET');
+        }
+
+        function obtenerFechaJornada() {
+            return document.getElementById('fechaJornadaInput').value;
+        }
+
+        function formatearMonto(valor) {
+            return '$' + Number(valor || 0).toLocaleString('es-UY');
+        }
+
+        function formatearDividendo(valor) {
+            if (!valor || Number(valor) <= 1) {
+                return 'S/E';
+            }
+
+            return Number(valor).toFixed(2);
+        }
+
+        function escapar(valor) {
+            return String(valor ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+    </script>
+</body>
+</html>

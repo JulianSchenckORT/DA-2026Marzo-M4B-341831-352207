@@ -5,4 +5,6 @@ public interface EstadoCarrera {
     void finalizar(Carrera carrera, RegistroParticipacion caballo);
 
     void abrir(Carrera carrera);
+
+    void cerrar(Carrera carrera);
 }

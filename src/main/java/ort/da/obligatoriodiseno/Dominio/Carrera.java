@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import ort.da.obligatoriodiseno.Dominio.estadosCarrera.Cerrada;
+import ort.da.obligatoriodiseno.Dominio.estadosCarrera.Finalizada;
 import ort.da.obligatoriodiseno.Dominio.estadosCarrera.Definida;
 
 @Getter
@@ -37,8 +39,15 @@ public class Carrera {
         estado.abrir(this);
     }
 
+    public void cerrar() {
+        estado.cerrar(this);
+    }
+
     public double getTotalPagado() {
-        return 0;
+        if (!(estado instanceof Finalizada)) {
+            return 0;
+        }
+        return getTotalApostado();
     }
 
     public double getTotalApostado() {
@@ -49,16 +58,14 @@ public class Carrera {
         return total;
     }
 
-
-    public double calcularDividendo(double comision, RegistroParticipacion caballo) {
+    public double calcularDividendo(double porcentajeDisponible, RegistroParticipacion caballo) {
         double totalCarrera = getTotalApostado();
         double totalRegistro = caballo.getTotalApostado();
-        totalCarrera = totalCarrera * comision;
 
         if (totalRegistro == 0) {
             return 0;
         }
-        return (totalCarrera - comision) / totalRegistro;
+        return (totalCarrera * porcentajeDisponible) / totalRegistro;
     }
 
     public void cambiarEstado(EstadoCarrera estado) {
@@ -67,6 +74,33 @@ public class Carrera {
 
     public void setGanador(RegistroParticipacion ganador) {
         this.ganador = ganador;
+        this.horaFinal = LocalTime.now();
+    }
+
+    public void agregarParticipante(Caballo caballo, int numero) {
+        this.caballos.add(new RegistroParticipacion(caballo, numero, this));
+    }
+
+    public int getCantidadApuestas() {
+        int total = 0;
+        for (RegistroParticipacion registro : caballos) {
+            if (registro.getListaApuestas() != null) {
+                total += registro.getListaApuestas().size();
+            }
+        }
+        return total;
+    }
+
+    public boolean estaFinalizada() {
+        return estado instanceof Finalizada;
+    }
+
+    public boolean estaCerrada() {
+        return estado instanceof Cerrada;
+    }
+
+    public String getNombreEstado() {
+        return estado.getClass().getSimpleName().toUpperCase();
     }
 
     public void recalcularDividendos() {

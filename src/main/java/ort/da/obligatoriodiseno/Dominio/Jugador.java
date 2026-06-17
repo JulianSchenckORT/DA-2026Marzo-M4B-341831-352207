@@ -1,7 +1,9 @@
 package ort.da.obligatoriodiseno.Dominio;
 import java.util.List;
+import java.util.ArrayList;
 import lombok.Getter;
 import lombok.Setter;
+import ort.da.obligatoriodiseno.excepciones.ApuestaException;
 @Getter
 	@Setter
 public class Jugador extends Usuario {
@@ -11,6 +13,17 @@ public class Jugador extends Usuario {
 	private List<Apuesta> HistorialApuestas;
 
 	private double Ganancias;
+
+	public Jugador() {
+		this.HistorialApuestas = new ArrayList<>();
+	}
+
+	public Jugador(String username, String password, String nombre, double saldo) {
+		super(username, password, nombre);
+		this.Saldo = saldo;
+		this.HistorialApuestas = new ArrayList<>();
+		this.Ganancias = 0;
+	}
 
 	public Apuesta apostar(double monto, RegistroParticipacion nroRegistroCaballo, FormaDeApostar formaDeApostar) {
     double costo = formaDeApostar.calcularCosto(monto);

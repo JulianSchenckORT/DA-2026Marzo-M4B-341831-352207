@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MalaPATA - Confirmar apuesta</title>
+    <script type="module" src="/CommandDispatcher.js"></script>
+    <style>
+        :root {
+            --page: #f4f7f3;
+            --surface: #ffffff;
+            --surface-soft: #edf4ef;
+            --ink: #1d2a27;
+            --muted: #63746f;
+            --line: #d7e1dc;
+            --primary: #0f6b61;
+            --primary-dark: #0a433f;
+            --accent: #ef7b45;
+            --gold: #f2c14e;
+            --ok: #248f5f;
+            --danger: #b84343;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 28px;
+            background:
+                linear-gradient(90deg, rgba(15, 107, 97, 0.08) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(15, 107, 97, 0.08) 1px, transparent 1px),
+                var(--page);
+            background-size: 42px 42px;
+            color: var(--ink);
+            font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+        }
+
+        .confirm-card {
+            width: min(720px, 100%);
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-left: 8px solid var(--accent);
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 16px 38px rgba(22, 48, 42, 0.12);
+        }
+
+        .confirm-head {
+            padding: 26px 32px;
+            background: var(--surface-soft);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .confirm-head h1 {
+            margin: 0 0 8px;
+            color: var(--primary-dark);
+            font-size: 28px;
+            line-height: 1.1;
+        }
+
+        .confirm-head p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .confirm-body {
+            padding: 30px 32px 32px;
+        }
+
+        .details,
+        .password-box {
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 18px 22px;
+        }
+
+        .details {
+            box-shadow: 0 8px 22px rgba(22, 48, 42, 0.06);
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .row:last-child {
+            border-bottom: 0;
+        }
+
+        .value {
+            color: var(--ink);
+            font-weight: 900;
+            text-align: right;
+        }
+
+        .money {
+            color: var(--accent);
+        }
+
+        .type-pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 24px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            color: var(--ink);
+            background: var(--gold);
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .potential {
+            margin: 24px 0;
+            border: 1px solid rgba(15, 107, 97, 0.28);
+            background: var(--primary-dark);
+            border-radius: 6px;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .potential span {
+            display: block;
+            color: #d8ebe5;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .potential strong {
+            display: block;
+            margin-top: 8px;
+            color: var(--gold);
+            font-size: 36px;
+        }
+
+        .potential small {
+            color: #d8ebe5;
+        }
+
+        .password-box {
+            background: var(--surface-soft);
+        }
+
+        .password-box h2 {
+            margin: 0 0 14px;
+            color: var(--primary-dark);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        input {
+            width: 100%;
+            min-height: 44px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--ink);
+            background: #ffffff;
+            font: inherit;
+        }
+
+        input:focus {
+            outline: 3px solid rgba(15, 107, 97, 0.18);
+            border-color: var(--primary);
+        }
+
+        .actions {
+            display: grid;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        button {
+            min-height: 48px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 900;
+            font: inherit;
+        }
+
+        .confirm-btn {
+            color: #ffffff;
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .confirm-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .discard-btn {
+            color: var(--danger);
+            background: #ffffff;
+            border-color: rgba(184, 67, 67, 0.34);
+        }
+
+        .discard-btn:hover {
+            background: #fff0f0;
+            border-color: var(--danger);
+        }
+
+        @media (max-width: 620px) {
+            body {
+                padding: 16px;
+            }
+
+            .confirm-head,
+            .confirm-body {
+                padding: 22px;
+            }
+
+            .row {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .value {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script src="/utilesVista.js"></script>
+
+    <main class="confirm-card">
+        <header class="confirm-head">
+            <h1>Confirmar Apuesta</h1>
+            <p>Revisa los detalles antes de confirmar. Esta operacion descontara el monto de tu saldo.</p>
+        </header>
+
+        <section class="confirm-body">
+            <div class="details">
+                <div class="row">
+                    <span>Nro. de Carrera</span>
+                    <strong id="carrera" class="value">-</strong>
+                </div>
+                <div class="row">
+                    <span>Caballo</span>
+                    <strong id="caballo" class="value">-</strong>
+                </div>
+                <div class="row">
+                    <span>Tipo de Apuesta</span>
+                    <strong class="value"><span id="tipoApuesta" class="type-pill">Simple</span></strong>
+                </div>
+                <div class="row">
+                    <span>Dividendo Actual</span>
+                    <strong id="dividendo" class="value money">0.00</strong>
+                </div>
+                <div class="row">
+                    <span>Monto Apostado</span>
+                    <strong id="montoApostado" class="value money">$0</strong>
+                </div>
+                <div class="row">
+                    <span>Monto a debitar del saldo</span>
+                    <strong id="montoDebitar" class="value money">$0</strong>
+                </div>
+            </div>
+
+            <div class="potential">
+                <span>Cobrarias si el caballo gana</span>
+                <strong id="montoPotencial">$0</strong>
+                <small>Calculo realizado en base al dividendo actual. El monto final puede variar.</small>
+            </div>
+
+            <form id="formConfirmar" class="password-box" onsubmit="confirmarApuesta(event)">
+                <h2>Ingresar contrasena</h2>
+                <label for="contrasenia">Contrasena</label>
+                <input id="contrasenia" name="contrasenia" type="password" autocomplete="current-password" required>
+
+                <div class="actions">
+                    <button class="confirm-btn" type="submit">Confirmar Apuesta</button>
+                    <button class="discard-btn" type="button" onclick="descartarApuesta()">Descartar Apuesta</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const vistaConfirmar = CommandDispatcher.registerView('ConfirmarApuesta', {
+                onException: async (msg) => await mostrarMensaje(msg),
+                onError: async (status, text) => await mostrarMensaje('Error ' + status + ': ' + text)
+            });
+
+            vistaConfirmar.handler('mostrarApuestaEnCurso', mostrarApuesta);
+            vistaConfirmar.handler('apuestaConfirmada', (urlDestino) => window.location.href = '/' + urlDestino);
+            vistaConfirmar.handler('apuestaDescartada', (urlDestino) => window.location.href = '/' + urlDestino);
+            vistaConfirmar.handler('usuarioNoAutenticado', (urlDestino) => window.location.href = '/' + urlDestino);
+            vistaConfirmar.handler('mensaje', async (mensaje) => await mostrarMensaje(mensaje));
+
+            CommandDispatcher.startView(vistaConfirmar);
+            CommandDispatcher.submit('/jugador/apuestas/confirmacion', {}, 'GET');
+        });
+
+        function mostrarApuesta(apuesta) {
+            document.getElementById('carrera').textContent = apuesta.numeroCarrera + ' - ' + apuesta.nombreCarrera;
+            document.getElementById('caballo').textContent = 'Nro. ' + apuesta.numeroCaballo + ' - ' + apuesta.nombreCaballo;
+            document.getElementById('tipoApuesta').textContent = apuesta.tipoApuesta;
+            document.getElementById('dividendo').textContent = Number(apuesta.dividendoActual || 0).toFixed(2);
+            document.getElementById('montoApostado').textContent = formatearMonto(apuesta.montoApostado);
+            document.getElementById('montoDebitar').textContent = formatearMonto(apuesta.montoDebitar);
+            document.getElementById('montoPotencial').textContent = formatearMonto(apuesta.montoPotencial);
+        }
+
+        function confirmarApuesta(event) {
+            event.preventDefault();
+            CommandDispatcher.submit('/jugador/apuestas/confirmar', serializarFormulario('formConfirmar'));
+        }
+
+        function descartarApuesta() {
+            CommandDispatcher.submit('/jugador/apuestas/descartar', {});
+        }
+
+        function formatearMonto(valor) {
+            return '$' + Number(valor || 0).toLocaleString('es-UY');
+        }
+    </script>
+</body>
+</html>

@@ -8,8 +8,17 @@ public abstract class Usuario {
 	private String password;
 	private String nombre;
 
+	public Usuario() {
+	}
+
+	public Usuario(String username, String password, String nombre) {
+		this.username = username;
+		this.password = password;
+		this.nombre = nombre;
+	}
+
 	public boolean esPasswordDe(String username, String password) {
-		return false;
+		return this.username.equals(username) && this.password.equals(password);
 	}
 
 }

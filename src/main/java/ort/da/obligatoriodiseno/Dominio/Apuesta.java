@@ -6,7 +6,7 @@ import ort.da.obligatoriodiseno.Dominio.estadosApuesta.EnCurso;
 	@Setter
 public  class Apuesta {
 	private double monto;
-	private RegistroParticipacion NroRegistroCaballo;
+	private RegistroParticipacion nroRegistroCaballo;
 	private Jugador jugador;
 	private EstadoApuesta estadoApuesta;
     private FormaDeApostar formaDeApostar;
@@ -14,7 +14,7 @@ public  class Apuesta {
 	public Apuesta(double monto, RegistroParticipacion nroRegistroCaballo, Jugador jugador,
                    FormaDeApostar formaDeApostar) {
         this.monto = monto;
-        this.NroRegistroCaballo = nroRegistroCaballo;
+        this.nroRegistroCaballo = nroRegistroCaballo;
         this.jugador = jugador;
         this.formaDeApostar = formaDeApostar;
         this.estadoApuesta = new EnCurso();

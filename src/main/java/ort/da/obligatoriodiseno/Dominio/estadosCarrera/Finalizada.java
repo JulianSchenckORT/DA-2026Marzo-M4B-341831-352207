@@ -6,15 +6,18 @@ import ort.da.obligatoriodiseno.Dominio.RegistroParticipacion;
 
 public class Finalizada implements EstadoCarrera {
 
-
     @Override
     public void finalizar(Carrera carrera, RegistroParticipacion caballo) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'finalizar'");
+        throw new IllegalStateException("No se puede finalizar esta carrera");
     }
+
     @Override
     public void abrir(Carrera carrera) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'abrir'");
+        throw new IllegalStateException("No se puede abrir esta carrera.");
+    }
+
+    @Override
+    public void cerrar(Carrera carrera) {
+        throw new IllegalStateException("No es posible cerrar esta carrera");
     }
 }

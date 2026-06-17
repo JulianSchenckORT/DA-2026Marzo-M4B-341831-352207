@@ -1,13 +1,14 @@
 package ort.da.obligatoriodiseno.presentadores;
 
 import org.springframework.context.annotation.Scope;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.servlet.http.HttpSession;
 import ort.da.obligatoriodiseno.utils.*;
 import ort.da.obligatoriodiseno.Dominio.Admin;
 import ort.da.obligatoriodiseno.excepciones.ApuestaException;
 import ort.da.obligatoriodiseno.servicios.fachada.Fachada;
-import ort.da.obligatoriodiseno.excepciones.ApuestaException;
 
 
 @RestController
@@ -35,5 +36,12 @@ public class PresentadorLoginAdministrador extends PresentadorLogin<Admin> {
     @Override
     protected String getClaveSesion() {
         return "Administrador";
+    }
+
+    @PostMapping("/liberar-sesiones")
+    public Commands liberarSesiones(HttpSession sesionHttp) {
+        fachada.cerrarSesionesAdministradores();
+        sesionHttp.invalidate();
+        return Command.lista(new Command("mensaje", "Sesiones de administradores liberadas"));
     }
 }
