@@ -430,8 +430,15 @@
             vistaTablero.handler('apuestaPreparada', (urlDestino) => window.location.href = '/' + urlDestino);
             vistaTablero.handler('usuarioNoAutenticado', (urlDestino) => window.location.href = '/' + urlDestino);
             vistaTablero.handler('mensaje', async (mensaje) => await mostrarMensaje(mensaje));
+            vistaTablero.handler('eventoSistema', (evento) => {
+                if (evento.tipo === 'TABLEROS_ACTUALIZADOS') {
+                    cargarTablero();
+                }
+            });
 
             CommandDispatcher.startView(vistaTablero);
+            const eventos = CommandDispatcher.connectEvents();
+            window.addEventListener('beforeunload', () => eventos?.close());
             cargarTablero();
         });
 
@@ -479,7 +486,7 @@
                                 <tr>
                                     <td class="horse-number">${caballo.numero}</td>
                                     <td>${escapar(caballo.nombre)}</td>
-                                    <td class="dividend">${Number(caballo.dividendoActual || 0).toFixed(2)}</td>
+                                    <td class="dividend">${formatearDividendo(caballo.dividendoActual)}</td>
                                     <td>
                                         <button class="bet-btn" type="button"
                                             onclick="prepararApuesta(${carrera.numero}, ${caballo.numero})">
@@ -523,7 +530,7 @@
 
             const monto = Number(String(montoIngresado).replace(',', '.'));
             if (!Number.isFinite(monto) || monto <= 0) {
-                mostrarMensaje('Ingrese un monto valido');
+                mostrarMensaje('El monto de la apuesta debe ser mayor a cero');
                 return;
             }
 
@@ -549,6 +556,11 @@
             }
             const partes = String(valor).split('-');
             return partes.length === 3 ? partes[2] + '/' + partes[1] + '/' + partes[0] : valor;
+        }
+
+        function formatearDividendo(valor) {
+            const numero = Number(valor || 0);
+            return numero > 1 ? numero.toFixed(2) : 'S/E';
         }
 
         function escapar(valor) {

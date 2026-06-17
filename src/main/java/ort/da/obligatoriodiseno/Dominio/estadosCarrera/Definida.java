@@ -8,7 +8,7 @@ public class Definida implements EstadoCarrera {
 
     @Override
     public void finalizar(Carrera carrera, RegistroParticipacion caballo) {
-        throw new IllegalStateException("No se puede finalizar esta carrera");
+        throw new IllegalStateException("Debe abrir y cerrar la carrera antes de finalizarla");
     }
 
     @Override
@@ -18,10 +18,10 @@ public class Definida implements EstadoCarrera {
 
     @Override
     public void cerrar(Carrera carrera) {
-        throw new IllegalStateException("No es posible cerrar esta carrera");
+        throw new IllegalStateException("Debe abrir la carrera antes de cerrarla");
     }
+
     @Override
     public void verificarDividendos(Carrera carrera) {
-        ;
     }
 }

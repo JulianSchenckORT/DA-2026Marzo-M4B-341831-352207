@@ -19,21 +19,9 @@ public abstract class PresentadorLogin<U extends Usuario> {
             @RequestParam String usuario,
             @RequestParam String contrasenia) {
 
-        try {
-            U usuarioLogueado = obtenerUsuario(usuario, contrasenia);
-
-            sesionHttp.setAttribute(getClaveSesion(), usuarioLogueado);
-
-            return Command.lista(new Command("loginExitoso", siguienteCU()));
-
-        } catch (ApuestaException e) {
-
-            if ("El administrador ya tiene una sesion activa".equals(e.getMessage())) {
-                return Command.lista(new Command("mensaje", e.getMessage()));
-            }
-
-            return Command.lista(new Command("mensaje", "Acceso denegado"));
-        }
+        U usuarioLogueado = obtenerUsuario(usuario, contrasenia);
+        sesionHttp.setAttribute(getClaveSesion(), usuarioLogueado);
+        return Command.lista(new Command("loginExitoso", siguienteCU()));
     }
 
     @PostMapping("/logout")

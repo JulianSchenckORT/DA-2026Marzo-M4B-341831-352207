@@ -13,7 +13,7 @@ public class Triple extends FormaDeApostar {
 }
 	@Override
 public double calcularCosto(double monto) {
-	return monto * 2;
+	return monto * 1.5;
 
 	}
 }

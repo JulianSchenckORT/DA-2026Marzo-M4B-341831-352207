@@ -29,7 +29,7 @@ public class Jugador extends Usuario {
     double costo = formaDeApostar.calcularCosto(monto);
 
     if (this.Saldo < costo) {
-        throw new ApuestaException("Saldo insuficiente para realizar la apuesta.");
+        throw new ApuestaException("Saldo insuficiente para realizar la apuesta");
     }
 
     Apuesta apuesta = new Apuesta(monto, nroRegistroCaballo, this, formaDeApostar);
@@ -45,7 +45,7 @@ public class Jugador extends Usuario {
 }
 	public void descartarApuesta(Apuesta apuesta) {
 	apuesta.descartar();
-	this.Saldo += apuesta.getMonto();
+	this.Saldo += apuesta.calcularCosto();
 	}
 
 	public double calcularTotalApostado() {

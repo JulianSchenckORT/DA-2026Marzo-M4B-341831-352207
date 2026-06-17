@@ -3,12 +3,14 @@ package ort.da.obligatoriodiseno.servicios;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
 import ort.da.obligatoriodiseno.Dominio.Apuesta;
 import ort.da.obligatoriodiseno.Dominio.Caballo;
 import ort.da.obligatoriodiseno.Dominio.Carrera;
+import ort.da.obligatoriodiseno.Dominio.Hipodromo;
 import ort.da.obligatoriodiseno.Dominio.Jornada;
 import ort.da.obligatoriodiseno.Dominio.Jugador;
 import ort.da.obligatoriodiseno.Dominio.RegistroParticipacion;
@@ -26,22 +28,26 @@ import ort.da.obligatoriodiseno.dtos.CarreraFinalizadaDto;
 import ort.da.obligatoriodiseno.dtos.CarreraPendienteDto;
 import ort.da.obligatoriodiseno.dtos.TableroAdministradorDto;
 import ort.da.obligatoriodiseno.dtos.TableroJugadorDto;
+import ort.da.obligatoriodiseno.eventos.EventoSistema;
+import ort.da.obligatoriodiseno.eventos.PublicadorEventos;
 import ort.da.obligatoriodiseno.excepciones.ApuestaException;
 
 public class SistemaCarrera {
     private static final double PORCENTAJE_COMISION = 0.10;
 
     private List<Jornada> jornadas;
+    private Hipodromo hipodromo;
 
     public SistemaCarrera() {
         this.jornadas = new ArrayList<>();
+        this.hipodromo = new Hipodromo(PORCENTAJE_COMISION);
         precargarJornadas();
     }
 
     public List<Carrera> GetCarrerasDisponibles() {
         List<Carrera> disponibles = new ArrayList<>();
-        for (Jornada jornada : jornadas) {
-            for (Carrera carrera : jornada.GetCarreras()) {
+        for (Jornada jornada : jornadasOrdenadas()) {
+            for (Carrera carrera : carrerasOrdenadas(jornada)) {
                 if ("ABIERTA".equals(carrera.getNombreEstado()) || "ESTABLE".equals(carrera.getNombreEstado())) {
                     disponibles.add(carrera);
                 }
@@ -84,7 +90,7 @@ public class SistemaCarrera {
             }
         }
         if (anterior == null) {
-            throw new ApuestaException("No hay jornada anterior");
+            throw new ApuestaException("No hay una jornada anterior disponible");
         }
         return armarTablero(anterior);
     }
@@ -98,7 +104,7 @@ public class SistemaCarrera {
             }
         }
         if (siguiente == null) {
-            throw new ApuestaException("No hay jornada siguiente");
+            throw new ApuestaException("No hay una jornada siguiente disponible");
         }
         return armarTablero(siguiente);
     }
@@ -114,6 +120,7 @@ public class SistemaCarrera {
         } catch (IllegalStateException e) {
             throw new ApuestaException(e.getMessage());
         }
+        notificarTablerosActualizados();
         return crearCarreraDto(carrera);
     }
 
@@ -124,6 +131,7 @@ public class SistemaCarrera {
         } catch (IllegalStateException e) {
             throw new ApuestaException(e.getMessage());
         }
+        notificarTablerosActualizados();
         return crearCarreraDto(carrera);
     }
 
@@ -138,6 +146,7 @@ public class SistemaCarrera {
         } catch (IllegalStateException e) {
             throw new ApuestaException(e.getMessage());
         }
+        notificarTablerosActualizados();
         return crearCarreraDto(carrera);
     }
 
@@ -152,7 +161,7 @@ public class SistemaCarrera {
         for (Carrera carrera : GetCarrerasDisponibles()) {
             tablero.getCarrerasDisponibles().add(crearCarreraDto(carrera));
         }
-        for (Apuesta apuesta : jugador.getHistorialApuestas()) {
+        for (Apuesta apuesta : apuestasOrdenadas(jugador.getHistorialApuestas())) {
             tablero.getMisApuestas().add(crearApuestaJugadorDto(apuesta));
         }
         return tablero;
@@ -162,7 +171,7 @@ public class SistemaCarrera {
             throws ApuestaException {
 
         if (monto <= 0) {
-            throw new ApuestaException("Ingrese un monto valido");
+            throw new ApuestaException("El monto de la apuesta debe ser mayor a cero");
         }
 
         Carrera carrera = buscarCarreraDisponible(nroCarrera);
@@ -183,24 +192,39 @@ public class SistemaCarrera {
     }
 
     public void confirmarApuesta(Jugador jugador, Apuesta apuesta, String contrasenia) throws ApuestaException {
+        if (contrasenia == null || contrasenia.isBlank()) {
+            throw new ApuestaException("Debe ingresar la contrasena para confirmar la apuesta");
+        }
         if (!jugador.esPasswordDe(jugador.getUsername(), contrasenia)) {
             throw new ApuestaException("Contrasena incorrecta");
         }
-        apuesta.confirmar();
-        jugador.getHistorialApuestas().add(apuesta);
-        apuesta.getNroRegistroCaballo().getListaApuestas().add(apuesta);
-        actualizarDividendos(buscarCarreraPorRegistro(apuesta.getNroRegistroCaballo()));
+        try {
+            apuesta.confirmar();
+            jugador.getHistorialApuestas().add(apuesta);
+        } catch (IllegalStateException e) {
+            throw new ApuestaException(e.getMessage());
+        }
+        notificarTablerosActualizados();
     }
 
     public void descartarApuesta(Jugador jugador, Apuesta apuesta) {
-        jugador.descartarApuesta(apuesta);
+        try {
+            jugador.descartarApuesta(apuesta);
+        } catch (IllegalStateException e) {
+            throw new ApuestaException(e.getMessage());
+        }
+        notificarTablerosActualizados();
+    }
+
+    private void notificarTablerosActualizados() {
+        PublicadorEventos.getInstancia().notificar(new EventoSistema("TABLEROS_ACTUALIZADOS", null));
     }
 
     private void precargarJornadas() {
         LocalDate hoy = LocalDate.now();
-        Jornada actual = new Jornada(hoy);
-        Jornada anterior = new Jornada(hoy.minusWeeks(1));
-        Jornada futura = new Jornada(hoy.plusWeeks(1));
+        Jornada actual = new Jornada(hoy, hipodromo);
+        Jornada anterior = new Jornada(hoy.minusWeeks(1), hipodromo);
+        Jornada futura = new Jornada(hoy.plusWeeks(1), hipodromo);
 
         actual.GetCarreras().add(crearCarreraDefinida(1, "Premio Apertura", actual));
         actual.GetCarreras().add(crearCarreraDefinida(2, "Clasico MalaPata", actual));
@@ -248,10 +272,9 @@ public class SistemaCarrera {
             for (int i = 0; i < cantidadPorCaballo; i++) {
                 Jugador jugador = new Jugador("demo" + indice, "demo" + indice, "Jugador Demo " + indice, 50000);
                 Apuesta apuesta = new Apuesta(800 + (i * 50), caballo, jugador, new Simple());
-                caballo.getListaApuestas().add(apuesta);
+                apuesta.confirmar();
                 indice++;
             }
-            caballo.setDividendo(calcularDividendo(carrera, caballo));
         }
     }
 
@@ -260,11 +283,11 @@ public class SistemaCarrera {
         dto.setFechaJornada(jornada.getFecha());
         dto.setTotalApostado(jornada.GetTotalApostado());
         dto.setTotalPagado(jornada.GetTotalPagado());
-        dto.setComisiones(jornada.GetTotalApostado() * PORCENTAJE_COMISION);
+        dto.setComisiones(jornada.GetTotalApostado() * jornada.getHipodromo().getComision());
         dto.setBalanceGeneral(jornada.GetTotalApostado() - jornada.GetTotalPagado());
         dto.setCarrerasTotales(jornada.GetCarreras().size());
 
-        for (Carrera carrera : jornada.GetCarreras()) {
+        for (Carrera carrera : carrerasOrdenadas(jornada)) {
             if (carrera.estaFinalizada()) {
                 dto.setCarrerasFinalizadas(dto.getCarrerasFinalizadas() + 1);
                 dto.getCarrerasFinalizadasDetalle().add(crearFinalizadaDto(carrera));
@@ -273,6 +296,10 @@ public class SistemaCarrera {
                 dto.getProximasCarreras().add(crearPendienteDto(carrera));
             }
         }
+        dto.getCarrerasFinalizadasDetalle().sort(Comparator
+                .comparing(CarreraFinalizadaDto::getHoraFin, Comparator.nullsLast(String::compareTo))
+                .thenComparing(CarreraFinalizadaDto::getNumero));
+        dto.getProximasCarreras().sort(Comparator.comparingInt(CarreraPendienteDto::getNumero));
         return dto;
     }
 
@@ -297,7 +324,7 @@ public class SistemaCarrera {
 
     private List<CaballoParticipanteDto> crearCaballosDto(Carrera carrera) {
         List<CaballoParticipanteDto> caballos = new ArrayList<>();
-        for (RegistroParticipacion caballo : carrera.getCaballos()) {
+        for (RegistroParticipacion caballo : caballosOrdenados(carrera)) {
             double total = caballo.getListaApuestas().stream().mapToDouble(Apuesta::getMonto).sum();
             caballos.add(new CaballoParticipanteDto(caballo.getId(), caballo.getCaballo().getNombre(),
                     caballo.getDividendo(), total, caballo.getListaApuestas().size()));
@@ -318,13 +345,41 @@ public class SistemaCarrera {
                 finalizada ? "FINALIZADA" : "EN CURSO");
     }
 
+    private List<Jornada> jornadasOrdenadas() {
+        List<Jornada> ordenadas = new ArrayList<>(jornadas);
+        ordenadas.sort(Comparator.comparing(Jornada::getFecha));
+        return ordenadas;
+    }
+
+    private List<Carrera> carrerasOrdenadas(Jornada jornada) {
+        List<Carrera> ordenadas = new ArrayList<>(jornada.GetCarreras());
+        ordenadas.sort(Comparator.comparingInt(Carrera::getNumero));
+        return ordenadas;
+    }
+
+    private List<RegistroParticipacion> caballosOrdenados(Carrera carrera) {
+        List<RegistroParticipacion> ordenados = new ArrayList<>(carrera.getCaballos());
+        ordenados.sort(Comparator.comparingInt(RegistroParticipacion::getId));
+        return ordenados;
+    }
+
+    private List<Apuesta> apuestasOrdenadas(List<Apuesta> apuestas) {
+        List<Apuesta> ordenadas = new ArrayList<>(apuestas);
+        ordenadas.sort(Comparator
+                .comparing((Apuesta apuesta) -> buscarCarreraPorRegistro(apuesta.getNroRegistroCaballo()).getJornada().getFecha())
+                .reversed()
+                .thenComparing(apuesta -> buscarCarreraPorRegistro(apuesta.getNroRegistroCaballo()).getNumero())
+                .thenComparing(apuesta -> apuesta.getNroRegistroCaballo().getId()));
+        return ordenadas;
+    }
+
     private Carrera buscarCarreraDisponible(int nroCarrera) throws ApuestaException {
         for (Carrera carrera : GetCarrerasDisponibles()) {
             if (carrera.getNumero() == nroCarrera) {
                 return carrera;
             }
         }
-        throw new ApuestaException("La carrera no esta disponible para apostar");
+        throw new ApuestaException("La carrera seleccionada no esta disponible para apostar");
     }
 
     private Carrera buscarCarreraPorRegistro(RegistroParticipacion registro) {
@@ -335,13 +390,7 @@ public class SistemaCarrera {
                 }
             }
         }
-        throw new ApuestaException("No se encontro la carrera de la apuesta");
-    }
-
-    private void actualizarDividendos(Carrera carrera) {
-        for (RegistroParticipacion caballo : carrera.getCaballos()) {
-            caballo.setDividendo(calcularDividendo(carrera, caballo));
-        }
+        throw new ApuestaException("No se encontro la carrera asociada a la apuesta");
     }
 
     private String obtenerIniciales(String nombre) {
@@ -368,13 +417,19 @@ public class SistemaCarrera {
     }
 
     private ort.da.obligatoriodiseno.Dominio.FormaDeApostar crearFormaDeApostar(String tipoApuesta) {
+        if (tipoApuesta == null || tipoApuesta.isBlank()) {
+            throw new ApuestaException("Debe seleccionar un tipo de apuesta");
+        }
         if ("Super".equalsIgnoreCase(tipoApuesta)) {
             return new Super();
         }
         if ("Multiple".equalsIgnoreCase(tipoApuesta) || "Triple".equalsIgnoreCase(tipoApuesta)) {
             return new Triple();
         }
-        return new Simple();
+        if ("Simple".equalsIgnoreCase(tipoApuesta)) {
+            return new Simple();
+        }
+        throw new ApuestaException("Tipo de apuesta invalido");
     }
 
     private Jornada obtenerJornadaActual() throws ApuestaException {
@@ -387,7 +442,7 @@ public class SistemaCarrera {
             }
         }
         if (actual == null) {
-            throw new ApuestaException("No hay jornadas disponibles");
+            throw new ApuestaException("No hay jornadas disponibles para mostrar");
         }
         return actual;
     }
@@ -404,7 +459,7 @@ public class SistemaCarrera {
     private Carrera obtenerCarreraDominio(LocalDate fecha, int numero) throws ApuestaException {
         Carrera carrera = getCarrera(fecha, numero);
         if (carrera == null) {
-            throw new ApuestaException("No hay carrera seleccionada");
+            throw new ApuestaException("No existe la carrera seleccionada");
         }
         return carrera;
     }
@@ -415,15 +470,7 @@ public class SistemaCarrera {
                 return caballo;
             }
         }
-        throw new ApuestaException("Debe indicar el caballo ganador de la carrera");
-    }
-
-    private double calcularDividendo(Carrera carrera, RegistroParticipacion caballo) {
-        double totalCaballo = caballo.getListaApuestas().stream().mapToDouble(Apuesta::getMonto).sum();
-        if (totalCaballo <= 0) {
-            return 0;
-        }
-        return (carrera.getTotalApostado() * (1 - PORCENTAJE_COMISION)) / totalCaballo;
+        throw new ApuestaException("No existe el caballo seleccionado para esa carrera");
     }
 
     private LocalDate toLocalDate(Date fecha) {

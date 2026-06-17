@@ -69,7 +69,7 @@ public class Carrera {
         return 0;
     }
 
-    double porcentajeComision = this.jornada.getHipodromo().getComision();
+    double porcentajeComision = this.jornada.getHipodromo() == null ? 0.10 : this.jornada.getHipodromo().getComision();
     double totalDisponible = totalCarrera * (1 - porcentajeComision);
 
     return totalDisponible / totalRegistro;

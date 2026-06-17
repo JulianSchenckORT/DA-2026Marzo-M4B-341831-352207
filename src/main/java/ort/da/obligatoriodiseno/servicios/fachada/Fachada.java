@@ -14,22 +14,16 @@ import ort.da.obligatoriodiseno.dtos.TableroJugadorDto;
 import ort.da.obligatoriodiseno.excepciones.ApuestaException;
 import ort.da.obligatoriodiseno.servicios.SistemaUsuarios;
 import ort.da.obligatoriodiseno.servicios.SistemaCarrera;
-import ort.da.obligatoriodiseno.servicios.SistemaCaballo;
-import ort.da.obligatoriodiseno.servicios.SistemaHipodromo;
 
 public class Fachada {
 private static Fachada instancia;
 
     private SistemaUsuarios sUsuarios;
     private SistemaCarrera sCarrera;
-    private SistemaCaballo sCaballo;
-    private SistemaHipodromo sHipodromo;
 
     private Fachada() {
         sUsuarios = new SistemaUsuarios();
         sCarrera = new SistemaCarrera();
-        sCaballo = new SistemaCaballo();
-        sHipodromo = new SistemaHipodromo();
     }
 
     public static Fachada getInstancia() {

@@ -15,11 +15,20 @@ public class Jornada {
 	private int contadorCarreras = 0;
 	private List<Carrera> listaCarreras = new ArrayList<>();
 	private Hipodromo hipodromo;
+
 	public Jornada() {
 	}
 
 	public Jornada(LocalDate fecha) {
+		this(fecha, new Hipodromo());
+	}
+
+	public Jornada(LocalDate fecha, Hipodromo hipodromo) {
 		this.fecha = fecha;
+		this.hipodromo = hipodromo;
+		if (hipodromo != null) {
+			hipodromo.agregarJornada(this);
+		}
 	}
 
 	public Carrera agregarCarrera(String nombre) {

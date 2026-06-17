@@ -127,7 +127,7 @@ class CommandDispatcher {
       }
 
       if (status < 200 || status > 299) {
-        this._notifyError(status, text);
+        this._notifyError(status, this._formatHttpError(status, text));
         return;
       }
 
@@ -142,6 +142,33 @@ class CommandDispatcher {
     } catch (error) {
       this._notifyError(0, error.message);
     }
+  }
+
+  connectEvents(url = '/eventos/stream') {
+    if (!window.EventSource) {
+      console.warn('El navegador no soporta eventos del servidor');
+      return null;
+    }
+
+    const source = new EventSource(url);
+    source.onmessage = (event) => {
+      if (!event.data) {
+        return;
+      }
+
+      try {
+        const json = JSON.parse(event.data);
+        if (json.commands && Array.isArray(json.commands)) {
+          this._processCommands(json.commands);
+        }
+      } catch (error) {
+        this._notifyError(0, 'Evento invalido: ' + error.message);
+      }
+    };
+    source.onerror = () => {
+      console.warn('Conexion de eventos interrumpida, el navegador intentara reconectar');
+    };
+    return source;
   }
 
   _toUrlEncoded(data) {
@@ -186,6 +213,25 @@ class CommandDispatcher {
 
     if (!notified) {
       console.error("Error HTTP:", status, text);
+    }
+  }
+
+  _formatHttpError(status, text) {
+    if (status === 404) {
+      return 'No se encontro el recurso solicitado';
+    }
+    if (status === 405) {
+      return 'La accion solicitada no esta disponible';
+    }
+    if (status >= 500) {
+      return 'Ocurrio un error interno. Intente nuevamente';
+    }
+
+    try {
+      const json = JSON.parse(text);
+      return json.message || json.error || text;
+    } catch (error) {
+      return text || 'Ocurrio un error al procesar la solicitud';
     }
   }
 

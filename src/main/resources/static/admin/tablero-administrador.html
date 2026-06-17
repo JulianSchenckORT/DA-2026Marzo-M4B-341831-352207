@@ -19,7 +19,6 @@
             <button id="btnJornadaAnterior" type="button">Anterior</button>
             <button id="btnJornadaSiguiente" type="button">Siguiente</button>
             <button id="btnBuscarJornada" type="button">Buscar</button>
-            <button id="btnActualizar" type="button">Actualizar</button>
             <button id="btnSalir" type="button">Salir</button>
         </div>
 
@@ -113,7 +112,6 @@
             const tablaCarrerasFinalizadas = document.getElementById('tablaCarrerasFinalizadas');
             const tablaProximasCarreras = document.getElementById('tablaProximasCarreras');
             const btnBuscarJornada = document.getElementById('btnBuscarJornada');
-            const btnActualizar = document.getElementById('btnActualizar');
             const btnJornadaAnterior = document.getElementById('btnJornadaAnterior');
             const btnJornadaSiguiente = document.getElementById('btnJornadaSiguiente');
             const btnSalir = document.getElementById('btnSalir');
@@ -150,6 +148,11 @@
 
             vistaTablero.handler('mensaje', async (mensaje) => await mostrarMensaje(mensaje));
             vistaTablero.handler('loginExitoso', (urlDestino) => window.location.href = '/' + urlDestino);
+            vistaTablero.handler('eventoSistema', (evento) => {
+                if (evento.tipo === 'TABLEROS_ACTUALIZADOS') {
+                    recargarTableroActual();
+                }
+            });
 
             CommandDispatcher.startView(vistaTablero);
 
@@ -166,11 +169,22 @@
                 CommandDispatcher.submit('/admin/apuestas/tablero/jornada', { fecha }, 'GET');
             };
 
-            btnActualizar.addEventListener('click', cargarTablero);
+            const recargarTableroActual = () => {
+                const fecha = fechaJornadaInput.value;
+                if (fecha) {
+                    CommandDispatcher.submit('/admin/apuestas/tablero/jornada', { fecha }, 'GET');
+                } else {
+                    cargarTablero();
+                }
+            };
+
             btnBuscarJornada.addEventListener('click', cargarTableroPorFecha);
             btnJornadaAnterior.addEventListener('click', () => cambiarJornada('anterior'));
             btnJornadaSiguiente.addEventListener('click', () => cambiarJornada('siguiente'));
             btnSalir.addEventListener('click', () => CommandDispatcher.submit('/login-admin/logout', {}));
+
+            const eventos = CommandDispatcher.connectEvents();
+            window.addEventListener('beforeunload', () => eventos?.close());
 
             cargarTablero();
         });

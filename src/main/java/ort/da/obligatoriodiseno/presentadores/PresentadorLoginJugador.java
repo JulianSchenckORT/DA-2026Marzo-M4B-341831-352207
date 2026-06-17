@@ -1,12 +1,16 @@
 package ort.da.obligatoriodiseno.presentadores;
 
 import org.springframework.context.annotation.Scope;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpSession;
 import ort.da.obligatoriodiseno.Dominio.Jugador;
 import ort.da.obligatoriodiseno.excepciones.ApuestaException;
 import ort.da.obligatoriodiseno.servicios.fachada.Fachada;
+import ort.da.obligatoriodiseno.utils.Commands;
 
 @RestController
 @RequestMapping("/login-jugador")
@@ -14,6 +18,20 @@ import ort.da.obligatoriodiseno.servicios.fachada.Fachada;
 public class PresentadorLoginJugador extends PresentadorLogin<Jugador> {
 
     private final Fachada fachada = Fachada.getInstancia();
+
+    @Override
+    @PostMapping("/login")
+    public Commands login(HttpSession sesionHttp,
+            @RequestParam String usuario,
+            @RequestParam String contrasenia) {
+        return super.login(sesionHttp, usuario, contrasenia);
+    }
+
+    @Override
+    @PostMapping("/logout")
+    public Commands logout(HttpSession sesionHttp) {
+        return super.logout(sesionHttp);
+    }
 
     @Override
     protected String siguienteCU() {
