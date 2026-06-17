@@ -1,19 +1,26 @@
 package ort.da.obligatoriodiseno.Dominio.estadosApuesta;
 import ort.da.obligatoriodiseno.Dominio.EstadoApuesta;
+import ort.da.obligatoriodiseno.Dominio.Jugador;
+import ort.da.obligatoriodiseno.Dominio.Apuesta;
 public class EnCurso implements EstadoApuesta {
 
-	public void descartar() {
+	public void descartar(Apuesta apuesta) {
+		apuesta.cambiarEstado(new Descartada());
 
 	}
 
-	public void confirmar() {
-
+	public void confirmar(Apuesta apuesta) {
+		apuesta.cambiarEstado(new Confirmada());
+		apuesta.getNroRegistroCaballo().getListaApuestas().add(apuesta);
+		apuesta.getNroRegistroCaballo().calcularDividendo();
 	}
+
+	
 
 	@Override
-	public void Pagar() {
+	public void Pagar(double ganancias,Jugador jugador) {
 		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'Pagar'");
+		throw new IllegalStateException("Unimplemented method 'Pagar'");
 	}
-
 }
+

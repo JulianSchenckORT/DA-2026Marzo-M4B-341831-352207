@@ -1,7 +1,8 @@
 package ort.da.obligatoriodiseno.Dominio;
+
 public interface EstadoCarrera {
-    Public void finalizar(RegistroParticipacion caballo
-        
-    );
-    public void abrir();
+
+    void finalizar(Carrera carrera, RegistroParticipacion caballo);
+
+    void abrir(Carrera carrera);
 }

@@ -1,23 +1,22 @@
 package ort.da.obligatoriodiseno.Dominio.estadosApuesta;
-
+import ort.da.obligatoriodiseno.Dominio.Apuesta;
+import ort.da.obligatoriodiseno.Dominio.Jugador;
 import ort.da.obligatoriodiseno.Dominio.EstadoApuesta;
-
 public class Confirmada implements EstadoApuesta {
 
     @Override
-    public void confirmar() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'confirmar'");
+    public void confirmar(Apuesta apuesta) {
+        throw new IllegalStateException("La apuesta ya está confirmada");
     }
 
     @Override
-    public void descartar() {
+    public void descartar(Apuesta apuesta) {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'descartar'");
+        throw new IllegalStateException("La apuesta ya está confirmada, no se puede descartar");
     }
 
     @Override
-    public void Pagar() {
+    public void Pagar(double ganancias,Jugador jugador) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'Pagar'");
     }

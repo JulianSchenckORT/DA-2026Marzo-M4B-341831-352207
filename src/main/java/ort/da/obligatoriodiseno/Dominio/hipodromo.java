@@ -1,11 +1,13 @@
 package ort.da.obligatoriodiseno.Dominio;
 import java.util.List;
 import java.util.Date;
-
+import lombok.Getter;
+import lombok.Setter;
+@Getter
+	@Setter
 public class hipodromo {
-
+	
 	private double comision;
-
 	private List<Jornada> listaJornadas;
 
 	public Double GetTotalApostadoByJornada(Date fecha) {
