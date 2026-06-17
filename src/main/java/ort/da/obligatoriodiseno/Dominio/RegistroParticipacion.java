@@ -29,7 +29,7 @@ public class RegistroParticipacion {
 	}
 
 	public Double calcularDividendo() {
-		this.dividendo = carrera.calcularDividendo(0.90, this);
+		this.dividendo = carrera.calcularDividendo(this);
 		return dividendo;
 	}
 

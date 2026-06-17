@@ -14,7 +14,7 @@ public class Jornada {
 	private LocalDate fecha;
 	private int contadorCarreras = 0;
 	private List<Carrera> listaCarreras = new ArrayList<>();
-
+	private Hipodromo hipodromo;
 	public Jornada() {
 	}
 

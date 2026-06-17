@@ -20,6 +20,7 @@ public class Carrera {
     private LocalTime horaFinal;
     private RegistroParticipacion ganador;
     private EstadoCarrera estado;
+    
 
     public Carrera(int nroCarrera, String nombre, Jornada jornada) {
         this.numero = nroCarrera;
@@ -60,15 +61,19 @@ public class Carrera {
     public void pagar (RegistroParticipacion caballo){
         caballo.pagarApuestas();
     }
-    public double calcularDividendo(double porcentajeDisponible, RegistroParticipacion caballo) {
-        double totalCarrera = getTotalApostado();
-        double totalRegistro = caballo.getTotalApostado();
+  public double calcularDividendo(RegistroParticipacion caballo) {
+    double totalCarrera = getTotalApostado();
+    double totalRegistro = caballo.getTotalApostado();
 
-        if (totalRegistro == 0) {
-            return 0;
-        }
-        return (totalCarrera * porcentajeDisponible) / totalRegistro;
+    if (totalRegistro == 0) {
+        return 0;
     }
+
+    double porcentajeComision = this.jornada.getHipodromo().getComision();
+    double totalDisponible = totalCarrera * (1 - porcentajeComision);
+
+    return totalDisponible / totalRegistro;
+}
 
     public void cambiarEstado(EstadoCarrera estado) {
         this.estado = estado;
