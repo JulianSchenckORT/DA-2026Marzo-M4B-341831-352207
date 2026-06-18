@@ -66,11 +66,11 @@ public class SistemaCarrera {
     }
 
     public CarreraDto obtenerCarreraParaGestion(LocalDate fecha, int numero) throws ApuestaException {
-        return crearCarreraDto(obtenerCarreraDominio(fecha, numero));
+        return crearCarreraDto(obtenerCarreraRequerida(fecha, numero));
     }
 
     public CarreraDto abrirCarrera(LocalDate fecha, int numero) throws ApuestaException {
-        Carrera carrera = obtenerCarreraDominio(fecha, numero);
+        Carrera carrera = obtenerCarreraRequerida(fecha, numero);
         try {
             carrera.abrir();
         } catch (IllegalStateException e) {
@@ -81,7 +81,7 @@ public class SistemaCarrera {
     }
 
     public CarreraDto cerrarCarrera(LocalDate fecha, int numero) throws ApuestaException {
-        Carrera carrera = obtenerCarreraDominio(fecha, numero);
+        Carrera carrera = obtenerCarreraRequerida(fecha, numero);
         try {
             carrera.cerrar();
         } catch (IllegalStateException e) {
@@ -95,7 +95,7 @@ public class SistemaCarrera {
         if (caballoGanador == null) {
             throw new ApuestaException("Debe indicar el caballo ganador de la carrera");
         }
-        Carrera carrera = obtenerCarreraDominio(fecha, numero);
+        Carrera carrera = obtenerCarreraRequerida(fecha, numero);
         RegistroParticipacion ganador = buscarCaballo(carrera, caballoGanador);
         try {
             carrera.finalizar(ganador);
@@ -151,7 +151,8 @@ public class SistemaCarrera {
         return caballos;
     }
 
-    private Carrera obtenerCarreraDominio(LocalDate fecha, int numero) throws ApuestaException {
+    // Devuelve la carrera indicada y centraliza el error cuando no existe.
+    private Carrera obtenerCarreraRequerida(LocalDate fecha, int numero) throws ApuestaException {
         Carrera carrera = getCarrera(fecha, numero);
         if (carrera == null) {
             throw new ApuestaException("No existe la carrera seleccionada");
